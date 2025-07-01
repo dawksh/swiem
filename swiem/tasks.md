@@ -1,5 +1,5 @@
--   [ ] Step 1: Project Setup
--   [ ] Step 2: Wallet Derivation from Mnemonic
+-   [x] Step 1: Project Setup
+-   [x] Step 2: Wallet Derivation from Mnemonic
 -   [ ] Step 3: Wallet Derivation from Private Key
 -   [ ] Step 4: Random Private Key Generation
 -   [ ] Step 5: Random Mnemonic Generation
