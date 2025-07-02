@@ -1,4 +1,5 @@
 import Foundation
+import web3
 
 public struct Wallet {
     public let privateKey: Data
@@ -7,7 +8,8 @@ public struct Wallet {
     
     public init(privateKey: Data) throws {
         self.privateKey = privateKey
-        self.publicKey = Data() // Will be computed when needed
+        let pk = try EthereumPrivateKey(privateKey: privateKey)
+        self.publicKey = pk.publicKey.raw
         self.address = try Address(publicKey: publicKey)
     }
     

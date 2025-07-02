@@ -1,6 +1,6 @@
 -   [x] Step 1: Project Setup
 -   [x] Step 2: Wallet Derivation from Mnemonic
--   [ ] Step 3: Wallet Derivation from Private Key
+-   [x] Step 3: Wallet Derivation from Private Key
 -   [ ] Step 4: Random Private Key Generation
 -   [ ] Step 5: Random Mnemonic Generation
 -   [ ] Step 6: Message Signing (personal_sign)
