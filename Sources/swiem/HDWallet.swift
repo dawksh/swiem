@@ -1,5 +1,6 @@
 import Foundation
 import CommonCrypto
+import BigInt
 
 public struct HDWallet {
     public let seed: Data
@@ -75,19 +76,18 @@ public struct HDKey {
     }
     
     private func addPrivateKeys(_ key1: Data, _ key2: Data) throws -> Data {
-        // Simple addition for now - this is a simplified implementation
-        var result = Data()
-        var carry: UInt8 = 0
-        
-        for i in 0..<32 {
-            let byte1 = i < key1.count ? key1[i] : 0
-            let byte2 = i < key2.count ? key2[i] : 0
-            let sum = byte1 + byte2 + carry
-            result.append(sum & 0xFF)
-            carry = sum >> 8
-        }
-        
-        return result
+        let n = BigUInt(Data([
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+            0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
+            0xBA,0xAE,0xDC,0xE6,0xAF,0x48,0xA0,0x3B,
+            0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x41
+        ]))
+        let k1 = BigUInt(key1)
+        let k2 = BigUInt(key2)
+        let sum = (k1 + k2) % n
+        guard sum > 0 && sum < n else { throw HDWalletError.invalidSeed }
+        let sumData = sum.serialize().leftPadding(toLength: 32)
+        return sumData
     }
 }
 
@@ -142,5 +142,11 @@ private extension UInt32 {
     
     var data: Data {
         return withUnsafeBytes(of: self) { Data($0) }
+    }
+}
+
+private extension Data {
+    func leftPadding(toLength: Int) -> Data {
+        count >= toLength ? self : Data(repeating: 0, count: toLength - count) + self
     }
 } 

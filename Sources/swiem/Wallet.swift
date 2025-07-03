@@ -43,7 +43,22 @@ public struct Wallet {
     }
 }
 
+enum WalletError: Error { case invalidPrivateKey }
+
+func isValidSecp256k1PrivateKey(_ key: Data) -> Bool {
+    guard key.count == 32 else { return false }
+    if key.allSatisfy({ $0 == 0 }) { return false }
+    let n: [UInt8] = [
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
+        0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFE,
+        0xBA,0xAE,0xDC,0xE6,0xAF,0x48,0xA0,0x3B,
+        0xBF,0xD2,0x5E,0x8C,0xD0,0x36,0x41,0x41
+    ]
+    return key.lexicographicallyPrecedes(Data(n))
+}
+
 func secp256k1_derivePublicKey(privateKey: Data) throws -> Data {
+    guard isValidSecp256k1PrivateKey(privateKey) else { throw WalletError.invalidPrivateKey }
     var ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
     defer { secp256k1_context_destroy(ctx) }
     var pk = secp256k1_pubkey()
@@ -51,7 +66,7 @@ func secp256k1_derivePublicKey(privateKey: Data) throws -> Data {
         guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
         return secp256k1_ec_pubkey_create(ctx, &pk, base)
     }
-    guard result == 1 else { throw NSError(domain: "secp256k1", code: -1) }
+    guard result == 1 else { throw WalletError.invalidPrivateKey }
     var output = [UInt8](repeating: 0, count: 65)
     var outputLen: size_t = 65
     secp256k1_ec_pubkey_serialize(ctx, &output, &outputLen, &pk, UInt32(SECP256K1_EC_UNCOMPRESSED))

@@ -18,6 +18,7 @@ let package = Package(
         .package(url: "https://github.com/tesseract-one/Bip39.swift.git", from: "0.2.0"),
         .package(url: "https://github.com/alephao/swift-rlp.git", branch: "main"),
         .package(url: "https://github.com/Boilertalk/secp256k1.swift", from: "0.1.7"),
+        .package(url: "https://github.com/attaswift/BigInt.git", from: "5.3.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "Bip39", package: "Bip39.swift"),
                 .product(name: "RLP", package: "swift-rlp"),
                 .product(name: "secp256k1", package: "secp256k1.swift"),
+                .product(name: "BigInt", package: "BigInt"),
             ]
         ),
         .testTarget(

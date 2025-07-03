@@ -45,5 +45,24 @@ final class swiemTests: XCTestCase {
         XCTAssertTrue(validAddress.isValid)
     }
 
+    /*
 
+    Wallet
+
+    - [ ] Wallet Generation
+    - [ ] Wallet Validation
+    
+    */
+
+    func testWalletGenerationFromMnemonic() throws {
+        let words = ["abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "about"]
+        let mnemonic = try Mnemonic(words.joined(separator: " "))
+        print("mnemonic:", mnemonic.phrase)
+        let wallet = try Wallet(mnemonic: mnemonic)
+        print("privateKey:", wallet.privateKeyHex)
+        print("publicKey:", wallet.publicKeyHex)
+        XCTAssertEqual(wallet.privateKey.count, 32)
+        XCTAssertEqual(wallet.publicKey.count, 65)
+        XCTAssertTrue(wallet.address.isValid)
+    }
 }
