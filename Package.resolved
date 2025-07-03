@@ -1,5 +1,5 @@
 {
-  "originHash" : "2ce3c097978c6f81b13d561eff54bd786a0f75cdd6794f3d2da0bc7881addee0",
+  "originHash" : "1dd1aab00cea3903d609ea46bc5154485e797d0bb3416cb4f549caef7e05eb89",
   "pins" : [
     {
       "identity" : "bip39.swift",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "bb2b82539d685e1457493b695cdc8e4dcff97c92",
         "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "secp256k1.swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Boilertalk/secp256k1.swift",
+      "state" : {
+        "revision" : "cd187c632fb812fd93711a9f7e644adb7e5f97f0",
+        "version" : "0.1.7"
       }
     },
     {
