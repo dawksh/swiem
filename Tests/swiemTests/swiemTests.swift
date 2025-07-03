@@ -24,4 +24,26 @@ final class swiemTests: XCTestCase {
         XCTAssertTrue(mnemonic.isValid)
     }
 
+
+    /*
+    
+    Address
+    
+    - [x] Address Generation
+    - [x] Address Validation
+    
+    */
+
+    func testAddressGeneration() throws {
+        let address = try Address(hex: "0x28172273cc1e0395f3473ec6ed062b6fdfb15940")
+        print(address)
+        XCTAssertEqual(address.checksummed, "0x28172273CC1E0395F3473EC6eD062B6fdFb15940")
+    }
+    
+    func testAddressValidation() throws {
+        let validAddress = try Address(hex: "0x9858EfFD232B4033E47d90003D41EC34Caea1e14")
+        XCTAssertTrue(validAddress.isValid)
+    }
+
+
 }

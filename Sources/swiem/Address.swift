@@ -28,14 +28,13 @@ public struct Address {
     }
     
     public var checksummed: String {
-        let address = hex.dropFirst(2)
+        let address = hex.dropFirst(2).lowercased()
         let hash = keccak256(address.data(using: .utf8)!)
-        return "0x" + zip(address, hash).map { char, hashByte in
-            let char = String(char)
-            let hashNibble = (hashByte >> 4) & 0x0F
-            let shouldUppercase = hashNibble >= 8
-            return shouldUppercase ? char.uppercased() : char.lowercased()
+        let checksummed = address.enumerated().map { i, c in
+            let nibble = (hash[i / 2] >> (i % 2 == 0 ? 4 : 0)) & 0x0F
+            return nibble >= 8 ? String(c).uppercased() : String(c)
         }.joined()
+        return "0x" + checksummed
     }
     
     public var isValid: Bool {
