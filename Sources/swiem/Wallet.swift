@@ -1,5 +1,5 @@
 import Foundation
-import web3
+import secp256k1
 
 public struct Wallet {
     public let privateKey: Data
@@ -8,8 +8,7 @@ public struct Wallet {
     
     public init(privateKey: Data) throws {
         self.privateKey = privateKey
-        let pk = try EthereumPrivateKey(privateKey: privateKey)
-        self.publicKey = pk.publicKey.raw
+        self.publicKey = try secp256k1_derivePublicKey(privateKey: privateKey)
         self.address = try Address(publicKey: publicKey)
     }
     
@@ -17,9 +16,8 @@ public struct Wallet {
         let seed = mnemonic.seed()
         let hdWallet = try HDWallet(seed: seed)
         let hdKey = try hdWallet.derive(path: path)
-        
         self.privateKey = hdKey.privateKey
-        self.publicKey = hdKey.publicKey
+        self.publicKey = try secp256k1_derivePublicKey(privateKey: hdKey.privateKey)
         self.address = try Address(publicKey: publicKey)
     }
     
@@ -43,4 +41,19 @@ public struct Wallet {
     public var checksummedAddress: String {
         return address.checksummed
     }
+}
+
+func secp256k1_derivePublicKey(privateKey: Data) throws -> Data {
+    var ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
+    defer { secp256k1_context_destroy(ctx) }
+    var pk = secp256k1_pubkey()
+    let result = privateKey.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) -> Int32 in
+        guard let base = ptr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+        return secp256k1_ec_pubkey_create(ctx, &pk, base)
+    }
+    guard result == 1 else { throw NSError(domain: "secp256k1", code: -1) }
+    var output = [UInt8](repeating: 0, count: 65)
+    var outputLen: size_t = 65
+    secp256k1_ec_pubkey_serialize(ctx, &output, &outputLen, &pk, UInt32(SECP256K1_EC_UNCOMPRESSED))
+    return Data(output[0..<Int(outputLen)])
 } 

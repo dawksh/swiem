@@ -17,7 +17,8 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/argentlabs/web3.swift", from: "0.9.2"),
         .package(url: "https://github.com/tesseract-one/Bip39.swift.git", from: "0.2.0"),
-        .package(url: "https://github.com/alephao/swift-rlp.git", branch: "main")
+        .package(url: "https://github.com/alephao/swift-rlp.git", branch: "main"),
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.8.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,6 +26,7 @@ let package = Package(
         .target(
             name: "swiem",
             dependencies: [
+                .product(name: "CryptoSwift", package: "CryptoSwift"),
                 .product(name: "web3.swift", package: "web3.swift"),
                 .product(name: "Bip39", package: "Bip39.swift"),
                 .product(name: "RLP", package: "swift-rlp")
