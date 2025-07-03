@@ -1,6 +1,4 @@
 import Foundation
-import UncommonCrypto
-import CryptoSwift
 
 public struct Address {
     public let data: Data
@@ -59,8 +57,4 @@ private extension Data {
         guard bytes.count * 2 == chars.count else { return nil }
         self.init(bytes)
     }
-}
-
-func keccak256(_ data: Data) -> Data {
-    data.sha3(.keccak256)
 } 
