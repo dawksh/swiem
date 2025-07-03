@@ -14,7 +14,7 @@ public struct Wallet {
     }
     
     public init(mnemonic: Mnemonic, path: String = "m/44'/60'/0'/0/0") throws {
-        let seed = mnemonic.toSeed()
+        let seed = mnemonic.seed()
         let hdWallet = try HDWallet(seed: seed)
         let hdKey = try hdWallet.derive(path: path)
         
@@ -24,7 +24,7 @@ public struct Wallet {
     }
     
     public init(mnemonicWords: [String], path: String = "m/44'/60'/0'/0/0") throws {
-        let mnemonic = try Mnemonic(words: mnemonicWords)
+        let mnemonic = try Mnemonic(mnemonicWords.joined(separator: " "))
         try self.init(mnemonic: mnemonic, path: path)
     }
     

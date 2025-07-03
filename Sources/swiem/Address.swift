@@ -10,7 +10,7 @@ public struct Address {
         }
         self.data = data
     }
-    
+
     public init(hex: String) throws {
         let cleanHex = hex.hasPrefix("0x") ? String(hex.dropFirst(2)) : hex
         guard let data = Data(hex: cleanHex), data.count == 20 else {
