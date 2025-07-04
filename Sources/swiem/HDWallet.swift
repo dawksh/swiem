@@ -1,6 +1,7 @@
 import Foundation
 import CommonCrypto
 import BigInt
+import secp256k1
 
 public struct HDWallet {
     public let seed: Data
@@ -29,16 +30,15 @@ public struct HDKey {
     public init(seed: Data) throws {
         let hmac = HMAC(key: "Bitcoin seed".data(using: .utf8)!, data: seed)
         let hash = hmac.digest()
-        
         self.privateKey = hash.prefix(32)
         self.chainCode = hash.suffix(32)
-        self.publicKey = Data() // Will be computed when needed
+        self.publicKey = try secp256k1_derivePublicKey(privateKey: self.privateKey)
     }
     
     public init(privateKey: Data, chainCode: Data) throws {
         self.privateKey = privateKey
         self.chainCode = chainCode
-        self.publicKey = Data() // Will be computed when needed
+        self.publicKey = try secp256k1_derivePublicKey(privateKey: privateKey)
     }
     
     public func derive(path: String) throws -> HDKey {
@@ -136,12 +136,8 @@ private struct SHA256 {
 }
 
 private extension UInt32 {
-    var bigEndian: UInt32 {
-        return self.bigEndian
-    }
-    
     var data: Data {
-        return withUnsafeBytes(of: self) { Data($0) }
+        withUnsafeBytes(of: self.bigEndian) { Data($0) }
     }
 }
 
