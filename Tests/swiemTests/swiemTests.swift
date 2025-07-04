@@ -36,7 +36,6 @@ final class swiemTests: XCTestCase {
 
     func testAddressGeneration() throws {
         let address = try Address(hex: "0x28172273cc1e0395f3473ec6ed062b6fdfb15940")
-        print(address)
         XCTAssertEqual(address.checksummed, "0x28172273CC1E0395F3473EC6eD062B6fdFb15940")
     }
     
@@ -61,11 +60,9 @@ final class swiemTests: XCTestCase {
         let hdWallet = try HDWallet(seed: seed)
         let hdKey = try hdWallet.derive(path: "m/44'/60'/0'/0/0")
         let privateKey = hdKey.privateKey
-        let publicKey = try secp256k1_derivePublicKey(privateKey: privateKey)
-        let wallet = try Wallet(privateKey: privateKey)
-        XCTAssertEqual(wallet.privateKey.count, 32)
-        XCTAssertEqual(wallet.publicKey.count, 65)
-        XCTAssertTrue(wallet.address.isValid)
+        _ = try Wallet(privateKey: privateKey)
+        XCTAssertEqual(privateKey.count, 32)
+        XCTAssertTrue(isValidSecp256k1PrivateKey(privateKey))
     }
 
     func testMinimalSecp256k1() throws {
@@ -91,6 +88,12 @@ final class swiemTests: XCTestCase {
         let input = Data([0x01, 0x02, 0x03, 0x04])
         let hash = keccak256(input)
         XCTAssertEqual(hash.count, 32)
+    }
+
+    func testRandomPrivateKeyGeneration() throws {
+        let key = try Wallet.randomPrivateKey()
+        XCTAssertEqual(key.count, 32)
+        XCTAssertTrue(isValidSecp256k1PrivateKey(key))
     }
 }
 

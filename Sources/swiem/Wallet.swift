@@ -1,5 +1,6 @@
 import Foundation
 import secp256k1
+import Security
 
 public struct Wallet {
     public let privateKey: Data
@@ -40,6 +41,18 @@ public struct Wallet {
     
     public var checksummedAddress: String {
         return address.checksummed
+    }
+    
+    public static func randomPrivateKey() throws -> Data {
+        while true {
+            var key = Data(count: 32)
+            let result = key.withUnsafeMutableBytes {
+                SecRandomCopyBytes(kSecRandomDefault, 32, $0.baseAddress!)
+            }
+            if result == errSecSuccess, isValidSecp256k1PrivateKey(key) {
+                return key
+            }
+        }
     }
 }
 
