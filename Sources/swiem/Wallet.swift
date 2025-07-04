@@ -54,6 +54,10 @@ public struct Wallet {
             }
         }
     }
+    
+    public static func randomMnemonic() throws -> Mnemonic {
+        try Mnemonic.random()
+    }
 }
 
 enum WalletError: Error { case invalidPrivateKey }

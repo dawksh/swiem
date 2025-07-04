@@ -95,6 +95,12 @@ final class swiemTests: XCTestCase {
         XCTAssertEqual(key.count, 32)
         XCTAssertTrue(isValidSecp256k1PrivateKey(key))
     }
+
+    func testRandomMnemonicGeneration() throws {
+        let mnemonic = try Wallet.randomMnemonic()
+        XCTAssertEqual(mnemonic.phrase.components(separatedBy: " ").count, 12)
+        XCTAssertTrue(mnemonic.isValid)
+    }
 }
 
 extension Data {
