@@ -19,7 +19,11 @@ public struct Address {
     }
     
     public init(publicKey: Data) throws {
-        let hash = keccak256(publicKey.dropFirst())
+        guard publicKey.count == 65, publicKey.first == 0x04 else {
+            throw AddressError.invalidLength
+        }
+        let pk = Data(publicKey.dropFirst())
+        let hash = keccak256(pk)
         self.data = hash.suffix(20)
     }
     

@@ -57,12 +57,59 @@ final class swiemTests: XCTestCase {
     func testWalletGenerationFromMnemonic() throws {
         let words = ["abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "abandon", "about"]
         let mnemonic = try Mnemonic(words.joined(separator: " "))
-        print("mnemonic:", mnemonic.phrase)
-        let wallet = try Wallet(mnemonic: mnemonic)
-        print("privateKey:", wallet.privateKeyHex)
-        print("publicKey:", wallet.publicKeyHex)
+        let seed = mnemonic.seed()
+        let hdWallet = try HDWallet(seed: seed)
+        let hdKey = try hdWallet.derive(path: "m/44'/60'/0'/0/0")
+        let privateKey = hdKey.privateKey
+        let publicKey = try secp256k1_derivePublicKey(privateKey: privateKey)
+        let wallet = try Wallet(privateKey: privateKey)
         XCTAssertEqual(wallet.privateKey.count, 32)
         XCTAssertEqual(wallet.publicKey.count, 65)
         XCTAssertTrue(wallet.address.isValid)
+    }
+
+    func testMinimalSecp256k1() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let publicKey = try secp256k1_derivePublicKey(privateKey: privateKey)
+        XCTAssertEqual(privateKey.count, 32)
+        XCTAssertEqual(publicKey.count, 65)
+    }
+
+    func testMinimalAddressFromPublicKey() throws {
+        let publicKeyHex = "04886d67a47bd30b43b4358f4ce72568dba1c52331c1793bf6b5a916f5dd6b298fc63acf986d7774b5776023103f0890ff4fe80b90be9e328453bace0984e76bbe"
+        let publicKey = Data(hex: publicKeyHex)!
+        do {
+            let address = try Address(publicKey: publicKey)
+            XCTAssertEqual(address.data.count, 20)
+        } catch {
+            XCTFail("Address(publicKey:) threw error: \(error)")
+        }
+    }
+
+    func testMinimalKeccak256() throws {
+        let input = Data([0x01, 0x02, 0x03, 0x04])
+        let hash = keccak256(input)
+        XCTAssertEqual(hash.count, 32)
+    }
+}
+
+extension Data {
+    init?(hex: String) {
+        let len = hex.count
+        var data = Data(capacity: len / 2)
+        var i = hex.startIndex
+        while i < hex.endIndex {
+            let j = hex.index(i, offsetBy: 2)
+            guard j <= hex.endIndex else { return nil }
+            let byte = hex[i..<j]
+            if let b = UInt8(byte, radix: 16) {
+                data.append(b)
+            } else {
+                return nil
+            }
+            i = j
+        }
+        self = data
     }
 }
