@@ -3,7 +3,7 @@
 - [x] Step 3: Wallet Derivation from Private Key
 - [x] Step 4: Random Private Key Generation
 - [x] Step 5: Random Mnemonic Generation
-- [ ] Step 6: Message Signing (personal_sign)
+- [x] Step 6: Message Signing (personal_sign)
 - [ ] Step 7: EIP-712 Typed Data Signing
 - [ ] Step 8: Checksum Address Conversion
 - [ ] Step 9: Transaction Signing
