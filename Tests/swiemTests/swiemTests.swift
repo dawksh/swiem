@@ -1,5 +1,6 @@
 import XCTest
 @testable import swiem
+import BigInt
 
 final class swiemTests: XCTestCase {
 
@@ -121,6 +122,39 @@ final class swiemTests: XCTestCase {
         let sig = try wallet.signMessageCompact(message)
         XCTAssertEqual(sig.count, 65)
         let v = sig[64]
+        XCTAssertTrue(v == 27 || v == 28)
+    }
+
+    func testSignTypedData712() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let wallet = try Wallet(privateKey: privateKey)
+        let types: [String: [[String: String]]] = [
+            "EIP712Domain": [
+                ["name": "name", "type": "string"],
+                ["name": "version", "type": "string"],
+                ["name": "chainId", "type": "uint256"],
+                ["name": "verifyingContract", "type": "address"]
+            ],
+            "Person": [
+                ["name": "name", "type": "string"],
+                ["name": "wallet", "type": "address"]
+            ]
+        ]
+        let domain: [String: Any] = [
+            "name": "Ether Mail",
+            "version": "1",
+            "chainId": BigUInt(1),
+            "verifyingContract": try Address(hex: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC")
+        ]
+        let message: [String: Any] = [
+            "name": "Bob",
+            "wallet": try Address(hex: "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB")
+        ]
+        let typed = TypedData(types: types, primaryType: "Person", domain: domain, message: message)
+        let (v, r, s) = try wallet.signTypedData(typed)
+        XCTAssertEqual(r.count, 32)
+        XCTAssertEqual(s.count, 32)
         XCTAssertTrue(v == 27 || v == 28)
     }
 }
