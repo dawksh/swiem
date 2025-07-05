@@ -58,6 +58,53 @@ public struct Wallet {
     public static func randomMnemonic() throws -> Mnemonic {
         try Mnemonic.random()
     }
+    
+    public func signMessage(_ message: Data) throws -> (v: UInt8, r: Data, s: Data) {
+        let prefix = "\u{19}Ethereum Signed Message:\n" + String(message.count)
+        let prefixed = prefix.data(using: .utf8)! + message
+        let hash = keccak256(prefixed)
+        var ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
+        defer { secp256k1_context_destroy(ctx) }
+        var signature = secp256k1_ecdsa_recoverable_signature()
+        let result = privateKey.withUnsafeBytes { keyPtr in
+            hash.withUnsafeBytes { msgPtr in
+                guard let keyBase = keyPtr.bindMemory(to: UInt8.self).baseAddress,
+                      let msgBase = msgPtr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+                return secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil)
+            }
+        }
+        guard result == 1 else { throw WalletError.invalidPrivateKey }
+        var output = [UInt8](repeating: 0, count: 64)
+        var recid: Int32 = 0
+        secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, &output, &recid, &signature)
+        let r = Data(output[0..<32])
+        let s = Data(output[32..<64])
+        let v = UInt8(recid) + 27
+        return (v, r, s)
+    }
+    
+    public func signMessageCompact(_ message: Data) throws -> Data {
+        let prefix = "\u{19}Ethereum Signed Message:\n" + String(message.count)
+        let prefixed = prefix.data(using: .utf8)! + message
+        let hash = keccak256(prefixed)
+        var ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
+        defer { secp256k1_context_destroy(ctx) }
+        var signature = secp256k1_ecdsa_recoverable_signature()
+        let result = privateKey.withUnsafeBytes { keyPtr in
+            hash.withUnsafeBytes { msgPtr in
+                guard let keyBase = keyPtr.bindMemory(to: UInt8.self).baseAddress,
+                      let msgBase = msgPtr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+                return secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil)
+            }
+        }
+        guard result == 1 else { throw WalletError.invalidPrivateKey }
+        var output = [UInt8](repeating: 0, count: 64)
+        var recid: Int32 = 0
+        secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, &output, &recid, &signature)
+        var sig = Data(output)
+        sig.append(UInt8(recid) + 27)
+        return sig
+    }
 }
 
 enum WalletError: Error { case invalidPrivateKey }
