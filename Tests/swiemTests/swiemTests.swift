@@ -101,6 +101,28 @@ final class swiemTests: XCTestCase {
         XCTAssertEqual(mnemonic.phrase.components(separatedBy: " ").count, 12)
         XCTAssertTrue(mnemonic.isValid)
     }
+
+    func testSignMessage() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let wallet = try Wallet(privateKey: privateKey)
+        let message = "hello".data(using: .utf8)!
+        let (v, r, s) = try wallet.signMessage(message)
+        XCTAssertEqual(r.count, 32)
+        XCTAssertEqual(s.count, 32)
+        XCTAssertTrue(v == 27 || v == 28)
+    }
+
+    func testSignMessageCompact() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let wallet = try Wallet(privateKey: privateKey)
+        let message = "hello".data(using: .utf8)!
+        let sig = try wallet.signMessageCompact(message)
+        XCTAssertEqual(sig.count, 65)
+        let v = sig[64]
+        XCTAssertTrue(v == 27 || v == 28)
+    }
 }
 
 extension Data {
