@@ -70,7 +70,7 @@ public struct Wallet {
             hash.withUnsafeBytes { msgPtr in
                 guard let keyBase = keyPtr.bindMemory(to: UInt8.self).baseAddress,
                       let msgBase = msgPtr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
-                return secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil)
+                return Int(secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil))
             }
         }
         guard result == 1 else { throw WalletError.invalidPrivateKey }
@@ -94,7 +94,7 @@ public struct Wallet {
             hash.withUnsafeBytes { msgPtr in
                 guard let keyBase = keyPtr.bindMemory(to: UInt8.self).baseAddress,
                       let msgBase = msgPtr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
-                return secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil)
+                return Int(secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil))
             }
         }
         guard result == 1 else { throw WalletError.invalidPrivateKey }
