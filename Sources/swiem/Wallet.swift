@@ -233,4 +233,109 @@ private extension Data {
     func leftPadding(toLength: Int) -> Data {
         count >= toLength ? self : Data(repeating: 0, count: toLength - count) + self
     }
+}
+
+public struct EthereumTransaction {
+    public let nonce: BigUInt
+    public let gasPrice: BigUInt
+    public let gasLimit: BigUInt
+    public let to: Address?
+    public let value: BigUInt
+    public let data: Data
+    public let chainId: BigUInt
+}
+
+func rlpEncode(_ items: [Any]) -> Data {
+    func encode(_ item: Any) -> Data {
+        if let d = item as? Data { return rlpEncodeBytes(d) }
+        if let s = item as? String { return rlpEncodeBytes(Data(s.utf8)) }
+        if let i = item as? BigUInt { return rlpEncodeBytes(i == 0 ? Data() : i.serialize()) }
+        if let a = item as? Address { return rlpEncodeBytes(a.data) }
+        if let l = item as? [Any] { return rlpEncodeList(l) }
+        return Data()
+    }
+    func rlpEncodeBytes(_ d: Data) -> Data {
+        if d.count == 1 && d[0] < 0x80 { return d }
+        if d.count < 56 { return Data([UInt8(0x80 + d.count)]) + d }
+        let len = encodeLength(d.count)
+        return Data([UInt8(0xb7 + len.count)]) + len + d
+    }
+    func rlpEncodeList(_ l: [Any]) -> Data {
+        let enc = l.map(encode).reduce(Data(), +)
+        if enc.count < 56 { return Data([UInt8(0xc0 + enc.count)]) + enc }
+        let len = encodeLength(enc.count)
+        return Data([UInt8(0xf7 + len.count)]) + len + enc
+    }
+    func encodeLength(_ len: Int) -> Data {
+        var l = len
+        var out = Data()
+        while l > 0 { out.insert(UInt8(l & 0xff), at: 0); l >>= 8 }
+        return out
+    }
+    return encode(items)
+}
+
+extension Wallet {
+    public func sendTransaction(tx: EthereumTransaction) throws -> Data {
+        let raw: [Any] = [
+            tx.nonce,
+            tx.gasPrice,
+            tx.gasLimit,
+            tx.to?.data ?? Data(),
+            tx.value,
+            tx.data,
+            tx.chainId,
+            BigUInt(0),
+            BigUInt(0)
+        ]
+        let rlp = rlpEncode(raw)
+        let hash = keccak256(rlp)
+        var ctx = secp256k1_context_create(UInt32(SECP256K1_CONTEXT_SIGN))!
+        defer { secp256k1_context_destroy(ctx) }
+        var signature = secp256k1_ecdsa_recoverable_signature()
+        let result = privateKey.withUnsafeBytes { keyPtr in
+            hash.withUnsafeBytes { msgPtr in
+                guard let keyBase = keyPtr.bindMemory(to: UInt8.self).baseAddress,
+                      let msgBase = msgPtr.bindMemory(to: UInt8.self).baseAddress else { return 0 }
+                return Int(secp256k1_ecdsa_sign_recoverable(ctx, &signature, msgBase, keyBase, nil, nil))
+            }
+        }
+        guard result == 1 else { throw WalletError.invalidPrivateKey }
+        var output = [UInt8](repeating: 0, count: 64)
+        var recid: Int32 = 0
+        secp256k1_ecdsa_recoverable_signature_serialize_compact(ctx, &output, &recid, &signature)
+        let r = BigUInt(Data(output[0..<32]))
+        let s = BigUInt(Data(output[32..<64]))
+        let v = BigUInt(Int(tx.chainId) * 2 + 35 + Int(recid))
+        let signed: [Any] = [
+            tx.nonce,
+            tx.gasPrice,
+            tx.gasLimit,
+            tx.to?.data ?? Data(),
+            tx.value,
+            tx.data,
+            v,
+            r,
+            s
+        ]
+        return rlpEncode(signed)
+    }
+    public func writeContract(method: String, to: Address, abi: [[String:Any]], args: [Any]? = nil, nonce: BigUInt, gasPrice: BigUInt, gasLimit: BigUInt, value: BigUInt = 0, chainId: BigUInt = 1) throws -> Data {
+        let methodAbi = abi.first { ($0["name"] as? String) == method }!
+        let types = (methodAbi["inputs"] as! [[String:Any]]).map { $0["type"] as! String }
+        let selector = keccak256((method + "(" + types.joined(separator: ",") + ")").data(using: .utf8)!).prefix(4)
+        let encodedArgs = (args ?? []).enumerated().map { i, v in encodeAbiArg(type: types[i], value: v) }.reduce(Data(), +)
+        let data = selector + encodedArgs
+        let tx = EthereumTransaction(nonce: nonce, gasPrice: gasPrice, gasLimit: gasLimit, to: to, value: value, data: data, chainId: chainId)
+        return try sendTransaction(tx: tx)
+    }
+}
+
+func encodeAbiArg(type: String, value: Any) -> Data {
+    if type == "address" { return (value as! Address).data.leftPadding(toLength: 32) }
+    if type == "uint256" { return (value as! BigUInt).serialize().leftPadding(toLength: 32) }
+    if type == "bool" { return ((value as! Bool) ? BigUInt(1) : BigUInt(0)).serialize().leftPadding(toLength: 32) }
+    if type == "bytes" { let d = value as! Data; return d + Data(repeating: 0, count: 32 - d.count) }
+    if type == "string" { let d = (value as! String).data(using: .utf8)!; return d + Data(repeating: 0, count: 32 - d.count) }
+    return Data(count: 32)
 } 

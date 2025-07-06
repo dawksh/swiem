@@ -4,8 +4,8 @@
 - [x] Step 4: Random Private Key Generation
 - [x] Step 5: Random Mnemonic Generation
 - [x] Step 6: Message Signing (personal_sign)
-- [ ] Step 7: EIP-712 Typed Data Signing
-- [ ] Step 8: Checksum Address Conversion
+- [x] Step 7: EIP-712 Typed Data Signing
+- [x] Step 8: Checksum Address Conversion
 - [ ] Step 9: Transaction Signing
 - [ ] Step 10: RLP Encoding for Transactions
 
