@@ -338,4 +338,31 @@ func encodeAbiArg(type: String, value: Any) -> Data {
     if type == "bytes" { let d = value as! Data; return d + Data(repeating: 0, count: 32 - d.count) }
     if type == "string" { let d = (value as! String).data(using: .utf8)!; return d + Data(repeating: 0, count: 32 - d.count) }
     return Data(count: 32)
+}
+
+extension Wallet {
+    public func sendRawTransaction(node: URL, raw: Data, completion: @escaping (Result<String, Error>) -> Void) {
+        let hex = "0x" + raw.map { String(format: "%02x", $0) }.joined()
+        let payload: [String: Any] = [
+            "jsonrpc": "2.0",
+            "method": "eth_sendRawTransaction",
+            "params": [hex],
+            "id": 1
+        ]
+        let body = try! JSONSerialization.data(withJSONObject: payload)
+        var req = URLRequest(url: node)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = body
+        URLSession.shared.dataTask(with: req) { data, _, err in
+            if let err = err { completion(.failure(err)); return }
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let result = json["result"] as? String else {
+                completion(.failure(NSError(domain: "rpc", code: 0)))
+                return
+            }
+            completion(.success(result))
+        }.resume()
+    }
 } 
