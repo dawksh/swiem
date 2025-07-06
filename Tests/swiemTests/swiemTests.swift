@@ -157,6 +157,42 @@ final class swiemTests: XCTestCase {
         XCTAssertEqual(s.count, 32)
         XCTAssertTrue(v == 27 || v == 28)
     }
+
+    func testSendTransaction() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let wallet = try Wallet(privateKey: privateKey)
+        let to = try Address(hex: "0x9858EfFD232B4033E47d90003D41EC34Caea1e14")
+        let tx = EthereumTransaction(
+            nonce: 1,
+            gasPrice: 1000000000,
+            gasLimit: 21000,
+            to: to,
+            value: 1000000000000000000,
+            data: Data(),
+            chainId: 1
+        )
+        let raw = try wallet.sendTransaction(tx: tx)
+        XCTAssertFalse(raw.isEmpty)
+    }
+
+    func testWriteContract() throws {
+        let privateKeyHex = "353f27c157022f59b5620db8f348a47994a3100547618619f5032b1bab0167ed"
+        let privateKey = Data(hex: privateKeyHex)!
+        let wallet = try Wallet(privateKey: privateKey)
+        let to = try Address(hex: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC")
+        let abi: [[String:Any]] = [[
+            "name": "transfer",
+            "type": "function",
+            "inputs": [
+                ["name": "to", "type": "address"],
+                ["name": "amount", "type": "uint256"]
+            ]
+        ]]
+        let args: [Any] = [try Address(hex: "0x9858EfFD232B4033E47d90003D41EC34Caea1e14"), BigUInt(1000)]
+        let raw = try wallet.writeContract(method: "transfer", to: to, abi: abi, args: args, nonce: 1, gasPrice: 1000000000, gasLimit: 60000, value: 0, chainId: 1)
+        XCTAssertFalse(raw.isEmpty)
+    }
 }
 
 extension Data {
